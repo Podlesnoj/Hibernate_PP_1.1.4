@@ -1,12 +1,15 @@
 package jm.task.core.jdbc.dao;
 
-import jm.task.core.jdbc.model.User;
-import jm.task.core.jdbc.util.Util;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import jm.task.core.jdbc.model.User;
+import jm.task.core.jdbc.util.Util;
 
 public class UserDaoJDBCImpl implements UserDao {
     private static final Logger logger = Logger.getLogger(UserDaoJDBCImpl.class.getName());
@@ -54,7 +57,11 @@ public class UserDaoJDBCImpl implements UserDao {
 
             logger.info("Пользователь " + name + " " + lastName + " успешно сохранен в БД");
         } catch (SQLException e) {
-            logger.severe("Ошибка при сохранении пользователя: " + e.getMessage());
+            try {
+                connection.rollback();
+                logger.severe("Ошибка при сохранении пользователя: " + e.getMessage());
+            } catch (SQLException ex) {
+            }
         }
     }
 
@@ -71,10 +78,13 @@ public class UserDaoJDBCImpl implements UserDao {
                 logger.warning("Пользователь с ID " + id + " не найден");
             }
         } catch (SQLException e) {
-            logger.severe("Ошибка при удалении пользователя: " + e.getMessage());
+            try {
+                connection.rollback();
+                logger.severe("Ошибка при удалении пользователя: " + e.getMessage());
+            } catch (SQLException ex) {
+            }
         }
     }
-
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT id, name, lastname, age FROM users"; // исправил lastName на lastname
