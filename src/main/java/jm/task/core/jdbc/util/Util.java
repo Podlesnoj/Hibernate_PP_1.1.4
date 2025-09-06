@@ -9,22 +9,29 @@ public class Util {
     public static final String USERNAME = "root";
     public static final String PASSWORD = "root";
 
+    private static Connection connection = null;
+
+
     private Util() {
         throw new UnsupportedOperationException("This is a utilitarian class, instantiation is prohibited");
     }
 
     public static Connection getConnection() {
         try {
-            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            if (connection == null || connection.isClosed()) {
+                connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            }
+            return connection;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error getting connection", e);
         }
     }
 
-    public static void closeConnection(Connection connection) {
+    public static void closeConnection() {
         if (connection != null) {
             try {
                 connection.close();
+                connection = null;
             } catch (SQLException e) {
                 throw new RuntimeException("Error closing connection", e);
             }

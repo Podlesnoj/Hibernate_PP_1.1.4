@@ -6,99 +6,75 @@ import jm.task.core.jdbc.util.Util;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class UserDaoJDBCImpl implements UserDao  {
-
-
+public class UserDaoJDBCImpl implements UserDao {
+    private static final Logger logger = Logger.getLogger(UserDaoJDBCImpl.class.getName());
     private final Connection connection;
 
-
     public UserDaoJDBCImpl() {
-
-            this.connection = Util.getConnection();
-
+        this.connection = Util.getConnection();
+        logger.info("Инициализирован UserDaoJDBCImpl с соединением к БД");
     }
 
-    @Override
     public void createUsersTable() {
         String sql = "CREATE TABLE IF NOT EXISTS users (" +
                 "id INT PRIMARY KEY AUTO_INCREMENT," +
-                "name VARCHAR(20)," +
-                "lastname VARCHAR(20)," +
-                "age INT )";
+                "name VARCHAR(50)," +
+                "lastName VARCHAR(50)," +
+                "age TINYINT)";
+
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
+            logger.info("Таблица users успешно создана или уже существует");
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            logger.severe("Ошибка при создании таблицы: " + e.getMessage());
         }
     }
 
-    @Override
     public void dropUsersTable() {
         String sql = "DROP TABLE IF EXISTS users";
+
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
+            logger.info("Таблица users успешно удалена");
         } catch (SQLException e) {
-            throw new RuntimeException("Couldn't delete the table: " + e);
+            logger.severe("Ошибка при удалении таблицы: " + e.getMessage());
         }
     }
 
-    @Override
     public void saveUser(String name, String lastName, byte age) {
-        String sql = "INSERT INTO users (name, lastname, age) VALUES (?, ?, ?)";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            connection.setAutoCommit(false);
+        String sql = "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)";
 
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setByte(3, age);
             preparedStatement.executeUpdate();
 
-            connection.commit();
-            System.out.println("User с именем - " + name + " добавлен в базу данных");
+            logger.info("Пользователь " + name + " " + lastName + " успешно сохранен в БД");
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException("Ошибка при откате транзакции", ex);
-            }
-            throw new RuntimeException("Couldn't save the user: " + e);
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                throw new RuntimeException("Ошибка при восстановлении autoCommit", ex);
-            }
+            logger.severe("Ошибка при сохранении пользователя: " + e.getMessage());
         }
     }
 
-    @Override
     public void removeUserById(long id) {
         String sql = "DELETE FROM users WHERE id = ?";
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            connection.setAutoCommit(false);
-
             preparedStatement.setLong(1, id);
-            preparedStatement.executeUpdate();
+            int rowsAffected = preparedStatement.executeUpdate();
 
-            connection.commit();
+            if (rowsAffected > 0) {
+                logger.info("Пользователь с ID " + id + " успешно удален");
+            } else {
+                logger.warning("Пользователь с ID " + id + " не найден");
+            }
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException("Ошибка при откате транзакции", ex);
-            }
-            throw new RuntimeException("Couldn't delete user from id " + id + ": " + e);
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                throw new RuntimeException("Ошибка при восстановлении autoCommit", ex);
-            }
+            logger.severe("Ошибка при удалении пользователя: " + e.getMessage());
         }
     }
 
-    @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         String sql = "SELECT id, name, lastname, age FROM users"; // исправил lastName на lastname
@@ -118,28 +94,14 @@ public class UserDaoJDBCImpl implements UserDao  {
         return users;
     }
 
-    @Override
     public void cleanUsersTable() {
         String sql = "TRUNCATE TABLE users";
+
         try (Statement statement = connection.createStatement()) {
-            connection.setAutoCommit(false);
-
             statement.executeUpdate(sql);
-
-            connection.commit();
+            logger.info("Таблица users успешно очищена");
         } catch (SQLException e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                throw new RuntimeException("Ошибка при откате транзакции", ex);
-            }
-            throw new RuntimeException("Couldn't clear the table: " + e);
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException ex) {
-                throw new RuntimeException("Ошибка при восстановлении autoCommit", ex);
-            }
+            logger.severe("Ошибка при очистке таблицы: " + e.getMessage());
         }
     }
 }

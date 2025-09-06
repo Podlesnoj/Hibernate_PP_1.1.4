@@ -20,11 +20,11 @@ public class User {
 
 
 
-    public User(Long id, String name, String lastName, Byte age) {
-        this.id = id;
-        this.name = name;
-        this.lastName = lastName;
-        this.age = age;
+    public User(long id, String name, String lastName, byte age) {
+        this.id = this.id;
+        this.name = this.name;
+        this.lastName = this.lastName;
+        this.age = this.age;
 
     }
 
