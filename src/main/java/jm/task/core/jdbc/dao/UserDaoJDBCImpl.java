@@ -1,16 +1,20 @@
 package jm.task.core.jdbc.dao;
 
-import jm.task.core.jdbc.model.User;
-import jm.task.core.jdbc.util.Util;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import jm.task.core.jdbc.model.User;
+import jm.task.core.jdbc.util.Util;
 
 public class UserDaoJDBCImpl implements UserDao {
     private static final Logger logger = Logger.getLogger(UserDaoJDBCImpl.class.getName());
     private final Connection connection;
+
 
     public UserDaoJDBCImpl() {
         this.connection = Util.getConnection();
@@ -45,23 +49,40 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public void saveUser(String name, String lastName, byte age) {
         String sql = "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)";
-
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setByte(3, age);
             preparedStatement.executeUpdate();
 
+            connection.commit();
             logger.info("Пользователь " + name + " " + lastName + " успешно сохранен в БД");
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+                logger.warning("Транзакция откатена из-за ошибки");
+            } catch (SQLException ex) {
+                logger.severe("Ошибка при rollback: " + ex.getMessage());
+            }
             logger.severe("Ошибка при сохранении пользователя: " + e.getMessage());
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                logger.severe("Ошибка при восстановлении авто-коммита: " + e.getMessage());
+            }
         }
     }
+
 
     public void removeUserById(long id) {
         String sql = "DELETE FROM users WHERE id = ?";
 
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
+
             preparedStatement.setLong(1, id);
             int rowsAffected = preparedStatement.executeUpdate();
 
@@ -70,14 +91,28 @@ public class UserDaoJDBCImpl implements UserDao {
             } else {
                 logger.warning("Пользователь с ID " + id + " не найден");
             }
+
+            connection.commit();
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+                logger.warning("Транзакция откатена из-за ошибки");
+            } catch (SQLException ex) {
+                logger.severe("Ошибка при rollback: " + ex.getMessage());
+            }
             logger.severe("Ошибка при удалении пользователя: " + e.getMessage());
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                logger.severe("Ошибка при восстановлении autoCommit: " + e.getMessage());
+            }
         }
     }
 
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        String sql = "SELECT id, name, lastname, age FROM users"; // исправил lastName на lastname
+        String sql = "SELECT id, name, lastname, age FROM users";
         try (Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(sql)) {
 
