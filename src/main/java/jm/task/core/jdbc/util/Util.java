@@ -3,6 +3,7 @@ package jm.task.core.jdbc.util;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import org.hibernate.SessionFactory;
 
 public class Util {
     public static final String URL = "jdbc:mysql://localhost:3306/new_schema_project?useSSL=false&serverTimezone=UTC";
@@ -37,4 +38,9 @@ public class Util {
             }
         }
     }
+
+    public static SessionFactory getSessionFactory() {
+        return null;
+    }
+
 }
