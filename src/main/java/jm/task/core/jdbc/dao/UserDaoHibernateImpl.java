@@ -83,8 +83,8 @@ public class UserDaoHibernateImpl implements UserDao {
         } catch (Exception e) {
             if (trans != null) {
                 trans.rollback();
+                throw e;
             }
-            e.printStackTrace();
         }
     }
 
