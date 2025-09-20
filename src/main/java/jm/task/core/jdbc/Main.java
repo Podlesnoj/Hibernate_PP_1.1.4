@@ -1,10 +1,11 @@
 package jm.task.core.jdbc;
 
 
-import jm.task.core.jdbc.service.UserServiceImpl;
-import jm.task.core.jdbc.util.Util;
-
 import java.util.logging.Logger;
+import jm.task.core.jdbc.util.Util;
+import jm.task.core.jdbc.service.UserServiceImpl;
+
+
 
 public class Main {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
@@ -22,6 +23,7 @@ public class Main {
         userService.getAllUsers();
         userService.cleanUsersTable();
         userService.dropUsersTable();
-        Util.closeConnection();
+        Util.shutdown();
     }
+
 }
