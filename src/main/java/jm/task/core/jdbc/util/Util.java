@@ -4,25 +4,28 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
-
 import jm.task.core.jdbc.model.User;
+import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
 import org.hibernate.service.ServiceRegistry;
 
-public class Util {
+
+public final class Util {
     public static final String URL = "jdbc:mysql://localhost:3306/new_schema_project?useSSL=false&serverTimezone=UTC";
     public static final String USERNAME = "root";
     public static final String PASSWORD = "root";
 
     private static Connection connection = null;
 
+    private static SessionFactory sessionFactory;
 
     private Util() {
         throw new UnsupportedOperationException("This is a utilitarian class, instantiation is prohibited");
     }
+
 
     public static Connection getConnection() {
         try {
@@ -45,7 +48,6 @@ public class Util {
             }
         }
     }
-    private static SessionFactory sessionFactory;
 
 
     public static SessionFactory getSessionFactory() {
@@ -55,9 +57,9 @@ public class Util {
 
                 Properties settings = new Properties();
                 settings.put(Environment.DRIVER, "com.mysql.cj.jdbc.Driver");
-                settings.put(Environment.URL, "jdbc:mysql://localhost:3306/new_schema_project?useSSL=false");
-                settings.put(Environment.USER, "root");
-                settings.put(Environment.PASS, "root");
+                settings.put(Environment.URL, URL);
+                settings.put(Environment.USER, USERNAME);
+                settings.put(Environment.PASS, PASSWORD);
                 settings.put(Environment.DIALECT, "org.hibernate.dialect.MySQL5Dialect");
                 settings.put(Environment.SHOW_SQL, "true");
                 settings.put(Environment.CURRENT_SESSION_CONTEXT_CLASS, "thread");
@@ -70,16 +72,24 @@ public class Util {
                         .applySettings(configuration.getProperties()).build();
 
                 sessionFactory = configuration.buildSessionFactory(serviceRegistry);
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (HibernateException e) {
+                throw e;
             }
         }
         return sessionFactory;
     }
+
     public static void shutdown() {
-        if (sessionFactory != null){
-            sessionFactory.close();
+        if (sessionFactory != null && !sessionFactory.isClosed()) {
+            try {
+                sessionFactory.close();
+                sessionFactory = null;
+            } catch (HibernateException e) {
+                throw e;
+            }
         }
     }
-
 }
+
+
+
